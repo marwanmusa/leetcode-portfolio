@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { fetchSolutionBySlug, fetchSolutionFileContent } from '@/lib/solutions';
 import { ProcessedSolution, SolutionFile } from '@/types/github';
+import { fetchAllSolutions } from '@/lib/solutions';
 
 // Problem descriptions for common LeetCode problems
 // In a real implementation, you might want to scrape these from LeetCode
@@ -43,6 +44,33 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return {
     title: `${solution.title} | LeetCode Solution`,
     description: `Detailed explanation and code implementation for the ${solution.title} problem.`,
+  };
+}
+
+export async function getStaticPaths() {
+  const solutions = await fetchAllSolutions();
+  const paths = solutions.map((solution) => ({
+    params: { slug: solution.slug },
+  }));
+
+  return {
+    paths,
+    fallback: 'blocking',
+  };
+}
+
+export async function getStaticProps({ params }: { params: { slug: string } }) {
+  const solution = await fetchSolutionBySlug(params.slug);
+
+  if (!solution) {
+    return { notFound: true };
+  }
+
+  return {
+    props: {
+      solution,
+    },
+    revalidate: 3600, // Revalidate every hour
   };
 }
 

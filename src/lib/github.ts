@@ -2,76 +2,102 @@
  * GitHub API integration for fetching LeetCode solutions
  */
 
+import NodeCache from 'node-cache';
+
 const GITHUB_API_URL = 'https://api.github.com';
 const GITHUB_REPO_OWNER = 'marwanmusa';
 const GITHUB_REPO_NAME = 'LeetCode-Challenges';
 const GITHUB_RAW_CONTENT_URL = 'https://raw.githubusercontent.com';
 
+// Initialize a cache with a default TTL of 1 hour
+const cache = new NodeCache({ stdTTL: 3600 });
+
 /**
  * Fetches repository contents from a specific path
  */
-export async function getRepoContents(path: string = '') {
-  const url = `${GITHUB_API_URL}/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${path}`;
-
-  // For public repositories, we don't need authentication
-  // If you hit rate limits, you can add a GitHub token here
-  const headers: HeadersInit = {
-    'Accept': 'application/vnd.github.v3+json',
-  };
-
-  // If you have a GitHub token, uncomment this line and add your token
-  // const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-  // if (GITHUB_TOKEN) {
-  //   headers['Authorization'] = `token ${GITHUB_TOKEN}`;
-  // }
-
-  try {
-    console.log(`Fetching GitHub contents from: ${url}`);
-    const response = await fetch(url, {
-      headers,
-      next: { revalidate: 3600 } // Cache for 1 hour
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`GitHub API error (${response.status}): ${errorText}`);
-      throw new Error(`GitHub API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log(`Successfully fetched ${Array.isArray(data) ? data.length : 1} items from GitHub`);
-    return data;
-  } catch (error) {
-    console.error('Error fetching repo contents:', error);
-    return [];
+function fetchWithCache<T>(key: string, fetchFunction: () => Promise<T>): Promise<T> {
+  const cachedData = cache.get<T>(key);
+  if (cachedData) {
+    console.log(`Cache hit for key: ${key}`);
+    return Promise.resolve(cachedData);
   }
+
+  console.log(`Cache miss for key: ${key}. Fetching from source...`);
+  return fetchFunction().then((data: T) => {
+    cache.set(key, data);
+    return data;
+  });
 }
 
-/**
- * Fetches a specific file's content from the repository
- */
-export async function getFileContent(path: string) {
-  const url = `${GITHUB_RAW_CONTENT_URL}/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${path}`;
+// Update getRepoContents to use caching
+export async function getRepoContents(path: string = '') {
+  const cacheKey = `repoContents:${path}`;
+  return fetchWithCache(cacheKey, async () => {
+    const url = `${GITHUB_API_URL}/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${path}`;
 
-  try {
-    console.log(`Fetching file content from: ${url}`);
-    const response = await fetch(url, {
-      next: { revalidate: 3600 } // Cache for 1 hour
-    });
+    // For public repositories, we don't need authentication
+    // If you hit rate limits, you can add a GitHub token here
+    const headers: HeadersInit = {
+      'Accept': 'application/vnd.github.v3+json',
+    };
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`GitHub raw content error (${response.status}): ${errorText}`);
-      throw new Error(`GitHub raw content error: ${response.status}`);
+    // Add support for authentication using a GitHub token
+    const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+    if (GITHUB_TOKEN) {
+      headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`;
     }
 
-    const content = await response.text();
-    console.log(`Successfully fetched file content (${content.length} bytes)`);
-    return content;
-  } catch (error) {
-    console.error('Error fetching file content:', error);
-    return null;
-  }
+    try {
+      console.log(`Fetching GitHub contents from: ${url}`);
+      const response = await fetch(url, {
+        headers,
+        next: { revalidate: 3600 } // Cache for 1 hour
+      });
+
+      // Improve error handling by providing detailed error messages
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`GitHub API error (${response.status}): ${errorText}`);
+        throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log(`Successfully fetched ${Array.isArray(data) ? data.length : 1} items from GitHub`);
+      return data;
+    } catch (error) {
+      console.error('Error fetching repo contents:', error);
+      return [];
+    }
+  });
+}
+
+// Update getFileContent to use caching
+export async function getFileContent(path: string) {
+  const cacheKey = `fileContent:${path}`;
+  return fetchWithCache(cacheKey, async () => {
+    const url = `${GITHUB_RAW_CONTENT_URL}/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${path}`;
+
+    try {
+      console.log(`Fetching file content from: ${url}`);
+      const response = await fetch(url, {
+        next: { revalidate: 3600 } // Cache for 1 hour
+      });
+
+      // Improve error handling by providing detailed error messages
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`GitHub raw content error (${response.status}): ${errorText}`);
+        throw new Error(`GitHub raw content error: ${response.status} - ${errorText}`);
+      }
+
+      const content = await response.text();
+      console.log(`Successfully fetched file content (${content.length} bytes)`);
+      return content;
+    } catch (error) {
+      console.error('Error fetching file content:', error);
+      return null;
+    }
+  });
 }
 
 /**

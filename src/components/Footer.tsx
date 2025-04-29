@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="bg-background border-t border-gray-200 dark:border-gray-800 py-8">
+    <footer className="bg-background border-t border-gray-200 dark:border-gray-800 py-8" role="contentinfo">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
@@ -14,7 +14,7 @@ export default function Footer() {
           
           <div>
             <h3 className="text-lg font-semibold mb-4">Links</h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2" aria-label="Footer links">
               <li>
                 <Link href="/" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
                   Home

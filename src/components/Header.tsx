@@ -16,7 +16,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-10 bg-background border-b border-gray-200 dark:border-gray-800">
+    <header className="sticky top-0 z-10 bg-background border-b border-gray-200 dark:border-gray-800" role="banner">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold">
           LeetCode Portfolio
@@ -54,7 +54,7 @@ export default function Header() {
         </button>
 
         {/* Desktop navigation */}
-        <nav className="hidden md:flex space-x-8">
+        <nav className="hidden md:flex space-x-8" aria-label="Primary navigation">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -73,7 +73,7 @@ export default function Header() {
 
       {/* Mobile navigation */}
       {isMenuOpen && (
-        <nav className="md:hidden bg-background border-t border-gray-200 dark:border-gray-800">
+        <nav className="md:hidden bg-background border-t border-gray-200 dark:border-gray-800" aria-label="Mobile navigation">
           <div className="container mx-auto px-4 py-2 flex flex-col">
             {navLinks.map((link) => (
               <Link
