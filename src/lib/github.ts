@@ -47,6 +47,9 @@ export async function getRepoContents(path: string = '') {
       headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`;
     }
 
+    console.log('GitHub Token:', GITHUB_TOKEN ? 'Token is set' : 'Token is missing');
+    console.log('Fetching from URL:', url);
+
     try {
       console.log(`Fetching GitHub contents from: ${url}`);
       const response = await fetch(url, {
@@ -103,63 +106,41 @@ export async function getFileContent(path: string) {
 /**
  * Gets all LeetCode solutions from the repository
  */
-export async function getAllSolutions() {
+export async function getAllSolutions(path: string = '') {
   console.log('Fetching all LeetCode solutions from repository...');
-  const contents = await getRepoContents();
+  const contents = await getRepoContents(path);
 
   if (!Array.isArray(contents)) {
     console.error('Repository contents is not an array:', contents);
     return [];
   }
 
-  console.log(`Found ${contents.length} items in repository root`);
+  console.log(`Found ${contents.length} items in repository path: ${path}`);
 
-  // Filter for directories that look like LeetCode problems
-  // Typically they start with a number followed by a dot or underscore
-  const problemDirs = contents.filter(item =>
-    item.type === 'dir' && /^\d+[._]/.test(item.name)
-  );
+  const solutions: any[] = [];
 
-  console.log(`Found ${problemDirs.length} potential LeetCode problem directories`);
-
-  const solutions = problemDirs.map(dir => {
-    // Parse the problem number and name from the directory name
-    const match = dir.name.match(/^(\d+)[._](.+)$/);
-
-    if (!match) {
-      return {
-        number: 0,
-        title: dir.name,
-        path: dir.path,
-        url: dir.html_url,
-        difficulty: 'Medium' as const, // Default difficulty
-        category: 'Algorithm', // Default category
-        slug: generateSlug(dir.name),
-      };
+  for (const item of contents) {
+    if (item.type === 'dir') {
+      // Recursively fetch solutions from subdirectories
+      const subSolutions = await getAllSolutions(item.path);
+      solutions.push(...subSolutions);
+    } else if (item.type === 'file' && item.name === 'metadata.json') {
+      // Fetch metadata for the solution
+      const metadata = await getFileContent(item.path);
+      if (metadata) {
+        try {
+          const parsedMetadata = JSON.parse(metadata);
+          solutions.push({
+            ...parsedMetadata,
+            path: item.path,
+            url: item.html_url,
+          });
+        } catch (error) {
+          console.error(`Error parsing metadata.json at ${item.path}:`, error);
+        }
+      }
     }
-
-    const number = parseInt(match[1], 10);
-    // Convert directory name to a more readable title
-    // e.g., "two-sum" -> "Two Sum"
-    const title = match[2]
-      .replace(/[-_]/g, ' ')
-      .replace(/\b\w/g, (c: string) => c.toUpperCase());
-
-    // Get difficulty and category
-    const difficulty = getProblemDifficulty(number);
-    const category = getProblemCategory(number);
-    const slug = generateSlug(title);
-
-    return {
-      number,
-      title,
-      path: dir.path,
-      url: dir.html_url,
-      difficulty,
-      category,
-      slug,
-    };
-  }).sort((a, b) => a.number - b.number);
+  }
 
   console.log(`Processed ${solutions.length} LeetCode solutions`);
   return solutions;

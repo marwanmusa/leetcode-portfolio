@@ -15,8 +15,12 @@ export default function AboutPage() {
         <section className="mb-16">
           <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
             <div className="w-48 h-48 relative rounded-full overflow-hidden bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 opacity-20"></div>
-              <div className="relative z-10 text-5xl font-bold text-blue-600 dark:text-blue-400">MM</div>
+              <Image
+                src="/profile.jpg"
+                alt="Profile Picture"
+                layout="fill"
+                objectFit="cover"
+              />
             </div>
             
             <div className="flex-1">
