@@ -1,15 +1,18 @@
 @import "tailwindcss";
 
+/* Base theme variables - light mode by default */
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
+/* Dark mode theme variables */
 [data-theme="dark"] {
   --background: #0a0a0a;
   --foreground: #ededed;
 }
 
+/* Tailwind theme configuration */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -17,8 +20,18 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Base styles */
+html {
+  background-color: var(--background);
+}
+
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Apply font family in a way that doesn't cause hydration issues */
+.antialiased {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
