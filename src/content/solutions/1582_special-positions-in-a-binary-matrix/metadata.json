@@ -1,7 +1,0 @@
-{
-  "title": "Special Positions in a Binary Matrix",
-  "difficulty": "Easy",
-  "category": "Array & String",
-  "languages": ["Python", "CPP", "JavaScript"],
-  "description": "The solution for this problem involves identifying 'special positions' in a binary matrix. A position (i, j) is considered special if: 1. The value at (i, j) is 1. 2. It is the only 1 in its row. 3. It is the only 1 in its column."
-}

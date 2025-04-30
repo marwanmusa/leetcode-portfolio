@@ -1,97 +1,156 @@
-import {
-  getAllSolutions,
-  getSolutionFiles,
-  getFileContent,
-  getProblemDifficulty,
-  getProblemCategory,
-  generateSlug
-} from './github';
+import fs from 'fs';
+import path from 'path';
 import { LeetCodeSolution, ProcessedSolution, SolutionFile } from '@/types/github';
 
+const SOLUTIONS_DIR = path.join(process.cwd(), 'src', 'content', 'solutions');
+
 /**
- * Fetches and processes all LeetCode solutions
+ * Gets all solution files from the local filesystem
  */
-export async function fetchAllSolutions(): Promise<ProcessedSolution[]> {
-  const solutions = await getAllSolutions();
+export async function getAllSolutions(): Promise<ProcessedSolution[]> {
+  const solutions: ProcessedSolution[] = [];
+  const categories = fs.readdirSync(SOLUTIONS_DIR)
+    .filter(item => {
+      const itemPath = path.join(SOLUTIONS_DIR, item);
+      return fs.statSync(itemPath).isDirectory() && item !== 'node_modules';
+    });
 
-  // Process each solution to add difficulty, category, and slug
-  const processedSolutions = solutions.map((solution: LeetCodeSolution) => {
-    const difficulty = getProblemDifficulty(solution.number);
-    const category = getProblemCategory(solution.number);
-    const slug = generateSlug(solution.title);
+  // Load metadata
+  const metadataPath = path.join(SOLUTIONS_DIR, 'metadata.json');
+  const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
 
-    return {
-      ...solution,
-      difficulty,
-      category,
-      slug,
-      files: [],
-      languages: [],
+  for (const category of categories) {
+    const categoryPath = path.join(SOLUTIONS_DIR, category);
+    const files: SolutionFile[] = [];
+    const languageSet = new Set<string>();
+
+    // Process each language directory (CPP, JS, Python)
+    const languageDirs = fs.readdirSync(categoryPath)
+      .filter(item => fs.statSync(path.join(categoryPath, item)).isDirectory());
+
+    for (const lang of languageDirs) {
+      const langPath = path.join(categoryPath, lang);
+      const solutionFiles = fs.readdirSync(langPath)
+        .filter(file => fs.statSync(path.join(langPath, file)).isFile());
+
+      for (const file of solutionFiles) {
+        const filePath = path.join(langPath, file);
+        const language = getLanguageFromFilename(file);
+        if (language !== 'Unknown') {
+          languageSet.add(language);
+        }
+        files.push({
+          name: file,
+          path: filePath.replace(/\\/g, '/'), // Convert Windows paths to forward slashes
+          url: '',
+          download_url: '',
+          language: language,
+        });
+      }
+    }
+
+    // Convert category name to slug for metadata lookup
+    const categorySlug = category.toLowerCase()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, '');
+    
+    const categoryMeta = metadata.categories[categorySlug] || {
+      title: formatCategoryName(category),
+      difficulty: 'Medium',
+      problemCount: files.length
     };
-  });
 
-  return processedSolutions;
-}
-
-/**
- * Fetches a specific solution by its slug
- */
-export async function fetchSolutionBySlug(slug: string): Promise<ProcessedSolution | null> {
-  const allSolutions = await fetchAllSolutions();
-  const solution = allSolutions.find(sol => sol.slug === slug);
-
-  if (!solution) {
-    return null;
+    solutions.push({
+      title: categoryMeta.title,
+      path: categoryPath.replace(/\\/g, '/'),
+      url: '',
+      files: files,
+      languages: Array.from(languageSet),
+      difficulty: categoryMeta.difficulty,
+      category: category,
+      slug: generateSlug(category),
+      number: categoryMeta.problemCount
+    });
   }
 
-  // Fetch the files for this solution
-  const files = await getSolutionFiles(solution.path);
-
-  // Extract unique languages
-  const languages = Array.from(new Set(files.map(file => file.language)))
-    .filter(lang => lang !== 'Unknown' && lang !== 'Text' && lang !== 'Markdown');
-
-  return {
-    ...solution,
-    files,
-    languages,
-  };
+  return solutions;
 }
 
 /**
- * Fetches the content of a specific solution file
+ * Determine difficulty based on problem complexity or file patterns
  */
+function determineDifficulty(files: SolutionFile[]): 'Easy' | 'Medium' | 'Hard' {
+  // You can implement more sophisticated difficulty detection here
+  // For now, returning a default value
+  return 'Medium';
+}
+
+/**
+ * Format category name for display
+ */
+function formatCategoryName(name: string): string {
+  return name
+    .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+    .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+    .trim();
+}
+
+/**
+ * Generate a URL-friendly slug from a string
+ */
+function generateSlug(str: string): string {
+  return str.toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+/**
+ * Determines the programming language from a filename
+ */
+function getLanguageFromFilename(filename: string): string {
+  const extension = filename.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'py': return 'Python';
+    case 'js': return 'JavaScript';
+    case 'ts': return 'TypeScript';
+    case 'cpp':
+    case 'c':
+    case 'h': return 'C++';
+    case 'java': return 'Java';
+    case 'ipynb': return 'Jupyter Notebook';
+    default: return 'Unknown';
+  }
+}
+
+// Keep the existing functions but update them to use local files
+export async function fetchSolutionBySlug(slug: string): Promise<ProcessedSolution | null> {
+  const solutions = await getAllSolutions();
+  return solutions.find(sol => sol.slug === slug) || null;
+}
+
 export async function fetchSolutionFileContent(file: SolutionFile): Promise<string | null> {
-  return await getFileContent(file.path);
+  try {
+    return fs.readFileSync(file.path, 'utf-8');
+  } catch (error) {
+    console.error('Error reading file:', error);
+    return null;
+  }
 }
 
-/**
- * Fetches featured solutions (e.g., for the homepage)
- */
 export async function fetchFeaturedSolutions(count: number = 3): Promise<ProcessedSolution[]> {
-  const allSolutions = await fetchAllSolutions();
-
-  // For now, just return the first few solutions
-  // In a real implementation, you might want to select specific featured solutions
-  return allSolutions.slice(0, count);
+  const solutions = await getAllSolutions();
+  return solutions.slice(0, count);
 }
 
-/**
- * Fetches solutions by category
- */
 export async function fetchSolutionsByCategory(category: string): Promise<ProcessedSolution[]> {
-  const allSolutions = await fetchAllSolutions();
-
-  return allSolutions.filter(solution =>
+  const solutions = await getAllSolutions();
+  return solutions.filter(solution => 
     solution.category?.toLowerCase() === category.toLowerCase()
   );
 }
 
-/**
- * Fetches solutions by difficulty
- */
 export async function fetchSolutionsByDifficulty(difficulty: 'Easy' | 'Medium' | 'Hard'): Promise<ProcessedSolution[]> {
-  const allSolutions = await fetchAllSolutions();
+  const allSolutions = await getAllSolutions();
 
   return allSolutions.filter(solution => solution.difficulty === difficulty);
 }
@@ -101,58 +160,48 @@ export async function fetchSolutionsByDifficulty(difficulty: 'Easy' | 'Medium' |
  */
 export async function getSolutionsStatistics() {
   try {
-    console.log('Fetching solution statistics...');
-    const allSolutions = await fetchAllSolutions();
-    console.log(`Found ${allSolutions.length} total solutions for statistics`);
+    const solutions = await getAllSolutions();
+    const totalSolutions = solutions.length;
 
-    const totalSolutions = allSolutions.length;
-
-    const easyCount = allSolutions.filter(sol => sol.difficulty === 'Easy').length;
-    const mediumCount = allSolutions.filter(sol => sol.difficulty === 'Medium').length;
-    const hardCount = allSolutions.filter(sol => sol.difficulty === 'Hard').length;
+    // Count solutions by difficulty
+    const difficultyCount = {
+      Easy: solutions.filter(s => s.difficulty === 'Easy').length,
+      Medium: solutions.filter(s => s.difficulty === 'Medium').length,
+      Hard: solutions.filter(s => s.difficulty === 'Hard').length,
+    };
 
     // Count solutions by category
-    const categoryCounts: Record<string, number> = {};
-    allSolutions.forEach(solution => {
+    const categoryCount: Record<string, number> = {};
+    solutions.forEach(solution => {
       if (solution.category) {
-        categoryCounts[solution.category] = (categoryCounts[solution.category] || 0) + 1;
+        categoryCount[solution.category] = (categoryCount[solution.category] || 0) + 1;
       }
     });
 
-    // Get top categories
-    const topCategories = Object.entries(categoryCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([name, count]) => ({ name, count }));
-
     // Count solutions by language
-    const languageCounts: Record<string, number> = {};
-
-    // In a real implementation, you would analyze the actual files
-    // For now, we'll use a simplified approach based on the number of solutions
-    if (totalSolutions > 0) {
-      languageCounts['Python'] = Math.floor(totalSolutions * 0.8);
-      languageCounts['JavaScript'] = Math.floor(totalSolutions * 0.5);
-      languageCounts['Java'] = Math.floor(totalSolutions * 0.3);
-    }
-
-    const languages = Object.entries(languageCounts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
+    const languageCount: Record<string, number> = {};
+    solutions.forEach(solution => {
+      solution.languages.forEach(lang => {
+        languageCount[lang] = (languageCount[lang] || 0) + 1;
+      });
+    });
 
     return {
       totalSolutions,
-      easyCount,
-      mediumCount,
-      hardCount,
-      categories: Object.keys(categoryCounts).length,
-      topCategories,
-      languages,
+      easyCount: difficultyCount.Easy,
+      mediumCount: difficultyCount.Medium,
+      hardCount: difficultyCount.Hard,
+      categories: Object.keys(categoryCount).length,
+      topCategories: Object.entries(categoryCount)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5),
+      languages: Object.entries(languageCount)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count),
     };
   } catch (error) {
     console.error('Error getting solution statistics:', error);
-
-    // Return default empty statistics
     return {
       totalSolutions: 0,
       easyCount: 0,

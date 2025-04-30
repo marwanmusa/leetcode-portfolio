@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import MainLayout from '@/components/MainLayout';
 import Link from 'next/link';
-import { fetchAllSolutions } from '@/lib/solutions';
+import { getAllSolutions } from '@/lib/solutions';
 
 // This will be replaced with real data from GitHub
 // Keeping this as a fallback in case the GitHub API fails
@@ -168,8 +168,29 @@ export default function SolutionsPage() {
   useEffect(() => {
     async function loadSolutions() {
       try {
-        const fetchedSolutions = await fetchAllSolutions();
-        const processedSolutions = fetchedSolutions.map((solution, index) => ({
+        const fetchedSolutions = await getAllSolutions();
+        interface Solution {
+          id: number;
+          number: number;
+          title: string;
+          difficulty: string;
+          category: string;
+          slug: string;
+          languages: string[];
+          lastUpdated: string;
+        }
+
+        interface FetchedSolution {
+          number?: number;
+          title?: string;
+          difficulty?: string;
+          category?: string;
+          slug?: string;
+          languages?: string[];
+          lastUpdated?: string;
+        }
+
+        const processedSolutions: Solution[] = fetchedSolutions.map((solution: FetchedSolution, index: number) => ({
           id: index + 1, // Add an `id` if missing
           number: solution.number || 0,
           title: solution.title || 'Untitled',

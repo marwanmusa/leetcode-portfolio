@@ -1,0 +1,104 @@
+{
+  "categories": {
+    "arrayandstring": {
+      "title": "Array and String",
+      "difficulty": "Easy",
+      "problemCount": 42
+    },
+    "binarysearch": {
+      "title": "Binary Search",
+      "difficulty": "Medium",
+      "problemCount": 28
+    },
+    "binarytree": {
+      "title": "Binary Tree",
+      "difficulty": "Medium",
+      "problemCount": 25
+    },
+    "bits": {
+      "title": "Bits",
+      "difficulty": "Easy",
+      "problemCount": 8
+    },
+    "concurrency": {
+      "title": "Concurrency",
+      "difficulty": "Medium",
+      "problemCount": 1
+    },
+    "dynamicprogramming": {
+      "title": "Dynamic Programming",
+      "difficulty": "Hard",
+      "problemCount": 2
+    },
+    "greedyproblem": {
+      "title": "Greedy Problem",
+      "difficulty": "Medium",
+      "problemCount": 1
+    },
+    "hashtable": {
+      "title": "Hash Table",
+      "difficulty": "Easy",
+      "problemCount": 17
+    },
+    "heap": {
+      "title": "Heap",
+      "difficulty": "Medium",
+      "problemCount": 4
+    },
+    "linkedlist": {
+      "title": "Linked List",
+      "difficulty": "Medium",
+      "problemCount": 14
+    },
+    "math": {
+      "title": "Math",
+      "difficulty": "Easy",
+      "problemCount": 24
+    },
+    "narytree": {
+      "title": "N-ary Tree",
+      "difficulty": "Easy",
+      "problemCount": 2
+    },
+    "prefixsum": {
+      "title": "Prefix Sum",
+      "difficulty": "Easy",
+      "problemCount": 2
+    },
+    "queue-stack": {
+      "title": "Queue & Stack",
+      "difficulty": "Medium",
+      "problemCount": 25
+    },
+    "recursion-1": {
+      "title": "Recursion I",
+      "difficulty": "Easy",
+      "problemCount": 13
+    },
+    "recursion-2": {
+      "title": "Recursion II",
+      "difficulty": "Medium",
+      "problemCount": 17
+    },
+    "sorting": {
+      "title": "Sorting",
+      "difficulty": "Easy",
+      "problemCount": 8
+    },
+    "string": {
+      "title": "String",
+      "difficulty": "Easy",
+      "problemCount": 8
+    },
+    "trie": {
+      "title": "Trie",
+      "difficulty": "Medium",
+      "problemCount": 7
+    },
+    "twopointers": {
+      "title": "Two Pointers",
+      "difficulty": "Easy",
+      "problemCount": 2
+    }
+  }
+}

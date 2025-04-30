@@ -1,9 +1,8 @@
 import MainLayout from '@/components/MainLayout';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { fetchSolutionBySlug, fetchSolutionFileContent } from '@/lib/solutions';
+import { fetchSolutionBySlug, fetchSolutionFileContent, getAllSolutions } from '@/lib/solutions';
 import { ProcessedSolution, SolutionFile } from '@/types/github';
-import { fetchAllSolutions } from '@/lib/solutions';
 
 // Problem descriptions for common LeetCode problems
 // In a real implementation, you might want to scrape these from LeetCode
@@ -47,31 +46,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export async function getStaticPaths() {
-  const solutions = await fetchAllSolutions();
-  const paths = solutions.map((solution) => ({
-    params: { slug: solution.slug },
+export async function generateStaticParams() {
+  const solutions = await getAllSolutions();
+  return solutions.map((solution: ProcessedSolution) => ({
+    slug: solution.slug,
   }));
-
-  return {
-    paths,
-    fallback: 'blocking',
-  };
-}
-
-export async function getStaticProps({ params }: { params: { slug: string } }) {
-  const solution = await fetchSolutionBySlug(params.slug);
-
-  if (!solution) {
-    return { notFound: true };
-  }
-
-  return {
-    props: {
-      solution,
-    },
-    revalidate: 3600, // Revalidate every hour
-  };
 }
 
 export default async function SolutionPage({ params }: { params: { slug: string } }) {

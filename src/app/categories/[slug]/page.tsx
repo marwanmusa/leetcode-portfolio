@@ -6,28 +6,44 @@ import { ProcessedSolution } from '@/types/github';
 
 // Category descriptions
 const categoryDescriptions: Record<string, string> = {
-  'array': 'Problems involving arrays, lists, and sequences of elements.',
-  'string': 'Problems involving string manipulation and pattern matching.',
-  'linked-list': 'Problems involving singly and doubly linked lists.',
+  'arrayandstring': 'Problems involving arrays, strings, and sequence manipulations.',
+  'binarysearch': 'Problems solved using binary search algorithms.',
+  'binarytree': 'Problems involving binary trees and tree traversals.',
+  'bits': 'Problems involving bit manipulation and binary operations.',
+  'concurrency': 'Problems related to concurrent programming and synchronization.',
+  'dynamicprogramming': 'Problems solved using dynamic programming techniques.',
+  'greedyproblem': 'Problems solved using greedy algorithms.',
+  'hashtable': 'Problems solved using hash tables and hash maps.',
+  'heap': 'Problems involving heap data structures.',
+  'linkedlist': 'Problems involving singly and doubly linked lists.',
   'math': 'Problems involving mathematical concepts and calculations.',
-  'dynamic-programming': 'Problems solved using dynamic programming techniques.',
-  'tree': 'Problems involving binary trees, n-ary trees, and tree traversals.',
-  'hash-table': 'Problems solved using hash tables and hash maps.',
-  'depth-first-search': 'Problems solved using depth-first search algorithms.',
-  'binary-search': 'Problems solved using binary search algorithms.',
-  'greedy': 'Problems solved using greedy algorithms.',
-  'backtracking': 'Problems solved using backtracking techniques.',
-  'graph': 'Problems involving graph data structures and algorithms.',
+  'narytree': 'Problems involving n-ary trees and their traversals.',
+  'prefixsum': 'Problems involving prefix sum technique.',
+  'queue-stack': 'Problems involving queue and stack data structures.',
+  'recursion-1': 'Basic recursion problems and techniques.',
+  'recursion-2': 'Advanced recursion problems and techniques.',
+  'sorting': 'Problems involving sorting algorithms and techniques.',
+  'string': 'Problems focused on string manipulation.',
+  'trie': 'Problems involving trie data structures.',
+  'twopointers': 'Problems solved using two-pointer technique.',
 };
 
 // Format category name for display
 function formatCategoryName(slug: string): string {
-  // Convert slug to title case
-  // e.g., 'dynamic-programming' -> 'Dynamic Programming'
   return slug
-    .split('-')
+    .replace(/-/g, ' ')
+    .replace(/and/g, '&')
+    .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
+}
+
+// Generate slug from category name
+function generateSlug(name: string): string {
+  return name.toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
@@ -36,7 +52,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
   return {
     title: `${categoryName} Problems | LeetCode Portfolio`,
-    description: `Browse LeetCode solutions for ${categoryName} problems.`,
+    description: categoryDescriptions[slug] || `Browse LeetCode solutions for ${categoryName} problems.`,
   };
 }
 
